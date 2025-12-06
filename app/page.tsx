@@ -1,65 +1,121 @@
-import Image from "next/image";
+"use client";
+
+import Navbar from "@/components/Navbar";
+import ModelSelector from "@/components/ModelSelector";
+import ChatBubble from "@/components/ChatBubble";
+import PromptInput from "@/components/PromptInput";
+import ParametersPanel from "@/components/ParametersPanel";
+import { useEffect, useRef, useState } from "react";
+
+type Theme = "light" | "dark";
+
+type Message = {
+  id: number;
+  sender: "user" | "ai";
+  text: string;
+};
 
 export default function Home() {
+  const [theme, setTheme] = useState<Theme>("light");
+
+  const [messages, setMessages] = useState<Message[]>([
+    { id: 1, sender: "user", text: "Hey! How are you doing today?" },
+    {
+      id: 2,
+      sender: "ai",
+      text: "I’m doing great! Just working through some stuff. What about you?",
+    },
+    {
+      id: 3,
+      sender: "user",
+      text: "Same here, just building an AI interface for my assignment.",
+    },
+    {
+      id: 4,
+      sender: "ai",
+      text: "Nice! Let me know what part you want to work on next.",
+    },
+  ]);
+
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  // theme load from localStorage
+  useEffect(() => {
+    const stored = window.localStorage.getItem("theme");
+    if (stored === "light" || stored === "dark") {
+      setTheme(stored);
+    }
+  }, []);
+
+  // theme save to localStorage
+  useEffect(() => {
+    window.localStorage.setItem("theme", theme);
+  }, [theme]);
+
+  const isDark = theme === "dark";
+
+  const mainBg = isDark ? "bg-[#050816]" : "bg-[#E6EEF6]";
+  const textColor = isDark ? "text-gray-100" : "text-gray-900";
+  
+
+  function handleUserSubmit(text: string) {
+    const userMsg: Message = {
+      id: Date.now(),
+      sender: "user",
+      text,
+    };
+
+    setMessages((prev) => [...prev, userMsg]);
+
+    
+    setTimeout(() => {
+      const aiMsg: Message = {
+        id: Date.now() + 1,
+        sender: "ai",
+        text: "This is a mock AI response based on your message: " + text,
+      };
+      setMessages((prev) => [...prev, aiMsg]);
+    }, 700);
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <main
+      className={`min-h-screen ${mainBg} ${textColor} px-4 md:px-8 lg:px-12 py-8`}
+    >
+      <Navbar
+        theme={theme}
+        onToggleTheme={() => setTheme(isDark ? "light" : "dark")}
+      />
+
+      
+      <div className="mt-8 flex flex-col md:flex-row gap-8">
+        <ModelSelector isDark={isDark} />
+
+        
+        <section className="flex-1 flex flex-col max-w-4xl mx-auto h-[70vh]">
+         
+          <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+            {messages.map((msg) => (
+              <ChatBubble
+                key={msg.id}
+                sender={msg.sender}
+                text={msg.text}
+                isDark={isDark}
+              />
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
+
+          
+          <div className="mt-3">
+            <PromptInput onSubmit={handleUserSubmit} />
+          </div>
+        </section>
+      </div>
+
+      <div className="max-w-4xl mx-auto w-full">
+        <ParametersPanel isDark={isDark} />
+      </div>
+    </main>
   );
 }
